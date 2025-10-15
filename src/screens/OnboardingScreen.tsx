@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -54,37 +54,39 @@ export default function OnboardingScreen({ onComplete, onLogin, onRegister }: On
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
-  
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const autoScrollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Auto-scroll effect
+  useEffect(() => {
+    startAutoScroll();
+    return () => {
+      if (autoScrollTimer.current) {
+        clearInterval(autoScrollTimer.current);
+      }
+    };
+  }, [currentIndex]);
 
+  const startAutoScroll = () => {
+    if (autoScrollTimer.current) {
+      clearInterval(autoScrollTimer.current);
+    }
+    
+    autoScrollTimer.current = setInterval(() => {
+      setCurrentIndex((prevIndex) => {
+        const nextIndex = (prevIndex + 1) % onboardingData.length;
+        flatListRef.current?.scrollToOffset({
+          offset: nextIndex * width,
+          animated: true,
+        });
+        return nextIndex;
+      });
+    }, 4000); // Change every 4 seconds
+  };
 
-  const animateContent = () => {
-    fadeAnim.setValue(0);
-    slideAnim.setValue(50);
-    scaleAnim.setValue(0.8);
-
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  const stopAutoScroll = () => {
+    if (autoScrollTimer.current) {
+      clearInterval(autoScrollTimer.current);
+    }
   };
 
   const handleScroll = Animated.event(
@@ -96,29 +98,10 @@ export default function OnboardingScreen({ onComplete, onLogin, onRegister }: On
         const index = Math.round(scrollPosition / width);
         if (index !== currentIndex) {
           setCurrentIndex(index);
-          animateContent();
         }
       },
     }
   );
-
-  const handleNext = () => {
-    if (currentIndex < onboardingData.length - 1) {
-      const nextIndex = currentIndex + 1;
-      flatListRef.current?.scrollToOffset({
-        offset: nextIndex * width,
-        animated: true,
-      });
-      setCurrentIndex(nextIndex);
-      animateContent();
-    } else {
-      onComplete();
-    }
-  };
-
-  const handleSkip = () => {
-    onComplete();
-  };
 
   const renderItem = ({ item, index }: { item: OnboardingItem; index: number }) => {
     return (
@@ -199,11 +182,6 @@ export default function OnboardingScreen({ onComplete, onLogin, onRegister }: On
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      
-      {/* Skip Button */}
-      <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-        <Text style={styles.skipText}>Skip</Text>
-      </TouchableOpacity>
 
       {/* Carousel */}
       <FlatList
@@ -223,24 +201,18 @@ export default function OnboardingScreen({ onComplete, onLogin, onRegister }: On
         initialNumToRender={3}
         maxToRenderPerBatch={3}
         windowSize={3}
+        onScrollBeginDrag={stopAutoScroll}
+        onScrollEndDrag={startAutoScroll}
       />
 
-      {/* Buttons */}
+      {/* Buttons - Always visible */}
       <View style={styles.buttonContainer}>
-        {currentIndex === onboardingData.length - 1 ? (
-          <>
-            <TouchableOpacity style={styles.secondaryButton} onPress={onLogin}>
-              <Text style={styles.secondaryButtonText}>Login</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={onRegister}>
-              <Text style={styles.buttonText}>Get Started</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <TouchableOpacity style={styles.button} onPress={handleNext}>
-            <Text style={styles.buttonText}>Next</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={styles.secondaryButton} onPress={onLogin}>
+          <Text style={styles.secondaryButtonText}>Login</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={onRegister}>
+          <Text style={styles.buttonText}>Get Started</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
