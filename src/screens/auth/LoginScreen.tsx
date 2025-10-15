@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import CountryPicker, { Country, CountryCode } from 'react-native-country-picker-modal';
@@ -45,6 +46,17 @@ export default function LoginScreen({ onLoginSuccess, onBack }: LoginScreenProps
           <TouchableOpacity onPress={onBack} style={styles.backButton}>
             <Text style={styles.backText}>←</Text>
           </TouchableOpacity>
+          
+          {/* Logo - Centered in header */}
+          <View style={styles.headerLogoContainer}>
+            <Image 
+              source={require('@/public/images/hallmarkcup.png')} 
+              style={styles.headerLogo}
+              resizeMode="contain"
+            />
+          </View>
+          
+          <View style={styles.backButton} />
         </View>
 
         {/* Content */}
@@ -113,9 +125,20 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   header: {
-    paddingTop: height * 0.06,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: height * 0.01,
     paddingHorizontal: width * 0.05,
-    marginBottom: height * 0.03,
+    marginBottom: height * 0.00,
+  },
+  headerLogoContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerLogo: {
+    width: width * 0.35,
+    height: width * 0.35,
   },
   backButton: {
     width: 40,
@@ -130,6 +153,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: width * 0.06,
   },
+
   title: {
     fontSize: 32,
     fontWeight: 'bold',
